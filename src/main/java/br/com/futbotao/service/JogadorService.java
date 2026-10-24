@@ -13,11 +13,11 @@ public class JogadorService {
     private long proximoId = 1;
 
     public synchronized JogadorResponse cadastrar(String nome) {
-        JogadorResponse Jogador =
+        JogadorResponse jogador =
                 new JogadorResponse(proximoId++, nome.strip());
 
-        jogadores.add(Jogador);
-        return Jogador;
+        jogadores.add(jogador);
+        return jogador;
     }
 
     public synchronized List<JogadorResponse> listar() {
