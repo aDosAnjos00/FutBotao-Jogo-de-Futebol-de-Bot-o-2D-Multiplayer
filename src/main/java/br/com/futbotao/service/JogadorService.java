@@ -1,26 +1,43 @@
 package br.com.futbotao.service;
 
 import br.com.futbotao.dto.JogadorResponse;
+import br.com.futbotao.model.Jogador;
+import br.com.futbotao.repository.JogadorRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class JogadorService {
 
-    private final List<JogadorResponse> jogadores = new ArrayList<>();
-    private long proximoId = 1;
+    private final JogadorRepository jogadorRepository;
 
-    public synchronized JogadorResponse cadastrar(String nome) {
-        JogadorResponse jogador =
-                new JogadorResponse(proximoId++, nome.strip());
-
-        jogadores.add(jogador);
-        return jogador;
+    public JogadorService(JogadorRepository jogadorRepository) {
+        this.jogadorRepository = jogadorRepository;
     }
 
-    public synchronized List<JogadorResponse> listar() {
-        return List.copyOf(jogadores);
+    @Transactional
+    public JogadorResponse cadastrar(String nome) {
+        Jogador jogador = new Jogador(nome.strip());
+
+        Jogador salvo = jogadorRepository.save(jogador);
+
+        return new JogadorResponse(
+                salvo.getId(),
+                salvo.getNome()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<JogadorResponse> listar() {
+        return jogadorRepository.findAll(Sort.by("id"))
+                .stream()
+                .map(jogador -> new JogadorResponse(
+                        jogador.getId(),
+                        jogador.getNome()
+                ))
+                .toList();
     }
 }

@@ -1,0 +1,147 @@
+[1mdiff --git a/src/main/java/br/com/futbotao/repository/JogadorRepository.java b/src/main/java/br/com/futbotao/repository/JogadorRepository.java[m
+[1mindex 8da875a..256ec02 100644[m
+[1m--- a/src/main/java/br/com/futbotao/repository/JogadorRepository.java[m
+[1m+++ b/src/main/java/br/com/futbotao/repository/JogadorRepository.java[m
+[36m@@ -1,4 +1,9 @@[m
+ package br.com.futbotao.repository;[m
+ [m
+[31m-public class JogadorRepository {[m
+[32m+[m[32mimport br.com.futbotao.model.Jogador;[m
+[32m+[m[32mimport org.springframework.data.jpa.repository.JpaRepository;[m
+[32m+[m
+[32m+[m[32mpublic interface JogadorRepository[m
+[32m+[m[32m        extends JpaRepository<Jogador, Long>{[m
+[32m+[m
+ }[m
+[1mdiff --git a/src/main/java/br/com/futbotao/service/JogadorService.java b/src/main/java/br/com/futbotao/service/JogadorService.java[m
+[1mindex 3e801f4..3662eec 100644[m
+[1m--- a/src/main/java/br/com/futbotao/service/JogadorService.java[m
+[1m+++ b/src/main/java/br/com/futbotao/service/JogadorService.java[m
+[36m@@ -1,26 +1,43 @@[m
+ package br.com.futbotao.service;[m
+ [m
+ import br.com.futbotao.dto.JogadorResponse;[m
+[32m+[m[32mimport br.com.futbotao.model.Jogador;[m
+[32m+[m[32mimport br.com.futbotao.repository.JogadorRepository;[m
+[32m+[m[32mimport org.springframework.data.domain.Sort;[m
+ import org.springframework.stereotype.Service;[m
+[32m+[m[32mimport org.springframework.transaction.annotation.Transactional;[m
+ [m
+[31m-import java.util.ArrayList;[m
+ import java.util.List;[m
+ [m
+ @Service[m
+ public class JogadorService {[m
+ [m
+[31m-    private final List<JogadorResponse> jogadores = new ArrayList<>();[m
+[31m-    private long proximoId = 1;[m
+[32m+[m[32m    private final JogadorRepository jogadorRepository;[m
+ [m
+[31m-    public synchronized JogadorResponse cadastrar(String nome) {[m
+[31m-        JogadorResponse jogador =[m
+[31m-                new JogadorResponse(proximoId++, nome.strip());[m
+[32m+[m[32m    public JogadorService(JogadorRepository jogadorRepository) {[m
+[32m+[m[32m        this.jogadorRepository = jogadorRepository;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    @Transactional[m
+[32m+[m[32m    public JogadorResponse cadastrar(String nome) {[m
+[32m+[m[32m        Jogador jogador = new Jogador(nome.strip());[m
+[32m+[m
+[32m+[m[32m        Jogador salvo = jogadorRepository.save(jogador);[m
+ [m
+[31m-        jogadores.add(jogador);[m
+[31m-        return jogador;[m
+[32m+[m[32m        return new JogadorResponse([m
+[32m+[m[32m                salvo.getId(),[m
+[32m+[m[32m                salvo.getNome()[m
+[32m+[m[32m        );[m
+     }[m
+ [m
+[31m-    public synchronized List<JogadorResponse> listar() {[m
+[31m-        return List.copyOf(jogadores);[m
+[32m+[m[32m    @Transactional(readOnly = true)[m
+[32m+[m[32m    public List<JogadorResponse> listar() {[m
+[32m+[m[32m        return jogadorRepository.findAll(Sort.by("id"))[m
+[32m+[m[32m                .stream()[m
+[32m+[m[32m                .map(jogador -> new JogadorResponse([m
+[32m+[m[32m                        jogador.getId(),[m
+[32m+[m[32m                        jogador.getNome()[m
+[32m+[m[32m                ))[m
+[32m+[m[32m                .toList();[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/src/main/resources/application-postgres.properties b/src/main/resources/application-postgres.properties[m
+[1mindex d672bf7..fb7bc52 100644[m
+[1m--- a/src/main/resources/application-postgres.properties[m
+[1m+++ b/src/main/resources/application-postgres.properties[m
+[36m@@ -1,3 +1,6 @@[m
+ spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/futbotao}[m
+ spring.datasource.username=${DB_USERNAME:postgres}[m
+ spring.datasource.password=${DB_PASSWORD}[m
+[32m+[m
+[32m+[m[32mspring.jpa.hibernate.ddl-auto=update[m
+[32m+[m[32mspring.jpa.open-in-view=false[m
+[1mdiff --git a/src/test/java/br/com/futbotao/controller/JogadorControllerTests.java b/src/test/java/br/com/futbotao/controller/JogadorControllerTests.java[m
+[1mindex df4683b..1c3f51f 100644[m
+[1m--- a/src/test/java/br/com/futbotao/controller/JogadorControllerTests.java[m
+[1m+++ b/src/test/java/br/com/futbotao/controller/JogadorControllerTests.java[m
+[36m@@ -3,23 +3,39 @@[m [mpackage br.com.futbotao.controller;[m
+ import br.com.futbotao.service.JogadorService;[m
+ import org.junit.jupiter.api.BeforeEach;[m
+ import org.junit.jupiter.api.Test;[m
+[32m+[m[32mimport org.springframework.beans.factory.annotation.Autowired;[m
+[32m+[m[32mimport org.springframework.boot.test.context.SpringBootTest;[m
+ import org.springframework.http.MediaType;[m
+[32m+[m[32mimport org.springframework.test.context.ActiveProfiles;[m
+ import org.springframework.test.web.servlet.MockMvc;[m
+ import org.springframework.test.web.servlet.setup.MockMvcBuilders;[m
+[32m+[m[32mimport org.springframework.transaction.annotation.Transactional;[m
+ [m
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;[m
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;[m
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;[m
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;[m
+ [m
+[32m+[m[32m@SpringBootTest(properties = {[m
+[32m+[m[32m        "spring.datasource.url=jdbc:h2:mem:futbotao_test;DB_CLOSE_DELAY=-1",[m
+[32m+[m[32m        "spring.datasource.username=sa",[m
+[32m+[m[32m        "spring.datasource.password=",[m
+[32m+[m[32m        "spring.jpa.hibernate.ddl-auto=create-drop"[m
+[32m+[m[32m})[m
+[32m+[m[32m@ActiveProfiles("test")[m
+[32m+[m[32m@Transactional[m
+ class JogadorControllerTests {[m
+ [m
+[32m+[m[32m    @Autowired[m
+[32m+[m[32m    private JogadorService jogadorService;[m
+[32m+[m
+     private MockMvc mvc;[m
+ [m
+     @BeforeEach[m
+     void configurar() {[m
+         mvc = MockMvcBuilders.standaloneSetup([m
+[31m-                new JogadorController(new JogadorService())).build();[m
+[32m+[m[32m                new JogadorController(jogadorService)[m
+[32m+[m[32m        ).build();[m
+     }[m
+ [m
+     @Test[m
+[36m@@ -28,7 +44,7 @@[m [mclass JogadorControllerTests {[m
+                         .contentType(MediaType.APPLICATION_JSON)[m
+                         .content("{\"nome\":\" Alisson \"}"))[m
+                 .andExpect(status().isCreated())[m
+[31m-                .andExpect(jsonPath("$.id").value(1))[m
+[32m+[m[32m                .andExpect(jsonPath("$.id").isNumber())[m
+                 .andExpect(jsonPath("$.nome").value("Alisson"));[m
+ [m
+         mvc.perform(get("/jogadores"))[m
+[36m@@ -48,4 +64,4 @@[m [mclass JogadorControllerTests {[m
+                 .andExpect(status().isOk())[m
+                 .andExpect(jsonPath("$.length()").value(0));[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
