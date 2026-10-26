@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -22,6 +23,11 @@ public class JogadorController {
 
     public JogadorController(JogadorService jogadorService) {
         this.jogadorService = jogadorService;
+    }
+
+    @GetMapping("/{id}")
+    public JogadorResponse buscarPorId(@PathVariable("id") Long id) {
+        return jogadorService.buscarPorId(id);
     }
 
     @PostMapping

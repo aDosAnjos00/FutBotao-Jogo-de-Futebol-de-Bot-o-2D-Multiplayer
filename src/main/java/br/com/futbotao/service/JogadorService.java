@@ -6,6 +6,8 @@ import br.com.futbotao.repository.JogadorRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -39,5 +41,19 @@ public class JogadorService {
                         jogador.getNome()
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public JogadorResponse buscarPorId(Long id) {
+        Jogador jogador = jogadorRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Jogador não encontrado"
+                ));
+
+        return new JogadorResponse(
+                jogador.getId(),
+                jogador.getNome()
+        );
     }
 }
