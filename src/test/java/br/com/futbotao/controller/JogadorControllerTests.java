@@ -1,6 +1,7 @@
 package br.com.futbotao.controller;
 
 import br.com.futbotao.service.JogadorService;
+import br.com.futbotao.exception.ApiExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,22 +36,24 @@ class JogadorControllerTests {
     void configurar() {
         mvc = MockMvcBuilders.standaloneSetup(
                 new JogadorController(jogadorService)
-        ).build();
+        )
+                .setControllerAdvice(new ApiExceptionHandler())
+                .build();
     }
 
     @Test
     void cadastraEListaJogador() throws Exception {
         mvc.perform(post("/jogadores")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nome\":\" Alisson \"}"))
+                        .content("{\"nome\":\" Jogador 1 \"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.nome").value("Alisson"));
+                .andExpect(jsonPath("$.nome").value("Jogador 1"));
 
         mvc.perform(get("/jogadores"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].nome").value("Alisson"));
+                .andExpect(jsonPath("$[0].nome").value("Jogador 1"));
     }
 
     @Test
@@ -58,10 +61,22 @@ class JogadorControllerTests {
         mvc.perform(post("/jogadores")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\":\"   \"}"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.mensagem").value("Dados inválidos"))
+                .andExpect(jsonPath("$.campos.nome").value("O nome é obrigatório"));
 
         mvc.perform(get("/jogadores"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void retornaErroPadronizadoParaJogadorInexistente() throws Exception {
+        mvc.perform(get("/jogadores/{id}", Long.MAX_VALUE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.mensagem")
+                        .value("Jogador não encontrado"));
     }
 }
