@@ -2,58 +2,53 @@ package br.com.futbotao.service;
 
 import br.com.futbotao.dto.JogadorResponse;
 import br.com.futbotao.model.Jogador;
-import br.com.futbotao.repository.JogadorRepository;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class JogadorService {
 
-    private final JogadorRepository jogadorRepository;
+    private final Map<Long, Jogador> jogadores = new ConcurrentHashMap<>();
+    private final AtomicLong proximoId = new AtomicLong();
 
-    public JogadorService(JogadorRepository jogadorRepository) {
-        this.jogadorRepository = jogadorRepository;
-    }
-
-    @Transactional
     public JogadorResponse cadastrar(String nome) {
-        Jogador jogador = new Jogador(nome.strip());
-
-        Jogador salvo = jogadorRepository.save(jogador);
-
-        return new JogadorResponse(
-                salvo.getId(),
-                salvo.getNome()
+        Jogador jogador = new Jogador(
+                proximoId.incrementAndGet(),
+                nome.strip()
         );
+        jogadores.put(jogador.getId(), jogador);
+
+        return converter(jogador);
     }
 
-    @Transactional(readOnly = true)
     public List<JogadorResponse> listar() {
-        return jogadorRepository.findAll(Sort.by("id"))
+        return jogadores.values()
                 .stream()
-                .map(jogador -> new JogadorResponse(
-                        jogador.getId(),
-                        jogador.getNome()
-                ))
+                .sorted(Comparator.comparing(Jogador::getId))
+                .map(this::converter)
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public JogadorResponse buscarPorId(Long id) {
-        Jogador jogador = jogadorRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Jogador não encontrado"
-                ));
+        Jogador jogador = jogadores.get(id);
+        if (jogador == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Jogador não encontrado"
+            );
+        }
 
-        return new JogadorResponse(
-                jogador.getId(),
-                jogador.getNome()
-        );
+        return converter(jogador);
+    }
+
+    private JogadorResponse converter(Jogador jogador) {
+        return new JogadorResponse(jogador.getId(), jogador.getNome());
     }
 }

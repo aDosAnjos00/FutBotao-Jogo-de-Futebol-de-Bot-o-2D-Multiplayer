@@ -1,39 +1,26 @@
 package br.com.futbotao.controller;
 
-import br.com.futbotao.service.JogadorService;
 import br.com.futbotao.exception.ApiExceptionHandler;
+import br.com.futbotao.service.JogadorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:futbotao_test;DB_CLOSE_DELAY=-1",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-})
-@ActiveProfiles("test")
-@Transactional
 class JogadorControllerTests {
 
-    @Autowired
     private JogadorService jogadorService;
-
     private MockMvc mvc;
 
     @BeforeEach
     void configurar() {
+        jogadorService = new JogadorService();
         mvc = MockMvcBuilders.standaloneSetup(
                 new JogadorController(jogadorService)
         )

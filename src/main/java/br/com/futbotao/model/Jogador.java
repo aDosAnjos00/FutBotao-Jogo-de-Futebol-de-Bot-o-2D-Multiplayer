@@ -1,26 +1,12 @@
 package br.com.futbotao.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-@Entity
-@Table(name = "Jogadores")
 public class Jogador {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private final Long id;
+    private final String nome;
 
-    private String nome;
-
-    protected Jogador() {
-        // Construtor exigido pelo JPA
-    }
-
-    public Jogador(String nome) {
+    public Jogador(Long id, String nome) {
+        this.id = id;
         this.nome = nome;
     }
 
