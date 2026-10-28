@@ -92,19 +92,27 @@ Parâmetros:
 - `tokenJogador`: token do jogador que está jogando.
 - `jogada`: objeto com `pecaId` (string), `direcaoX` e `direcaoY` (números entre -1 e 1; não podem ser ambos zero) e `forca` (número entre 1 e 100).
 
-A disposição inicial das peças, coordenadas do campo e movimentação simplificada serão definidas junto à implementação do modelo de jogo. A interface não envia o placar nem determina se houve gol.
+## Regras simplificadas do campo
+
+- Campo lógico de 100 por 60 unidades; não representa pixels da interface.
+- Uma peça controlável por jogador, posicionada em lados opostos.
+- O jogador move sua peça na direção enviada. Se o trajeto passar a até 2,5 unidades da bola, o servidor considera o contato e desloca a bola na mesma direção.
+- A força determina a distância da peça, até o máximo de 20 unidades; a bola pode percorrer até 1,5 vez o trecho restante após o contato.
+- Gols ficam nas extremidades do campo e ocupam o intervalo vertical entre 25 e 35.
+- Bola fora da área do gol para na borda do campo. Não há física de atrito nem colisões entre peças.
+- Após um gol, o placar atualiza e as posições reiniciam. O turno alterna. A partida termina quando alguém chega a três gols.
 
 ## Estado retornado
 
 O estado deve informar, no mínimo:
 
 - código da partida e situação: aguardando jogador, em andamento ou encerrada;
-- jogadores participantes e seus gols;
+- jogadores participantes, IDs de peça e seus gols;
 - identificador do jogador da vez;
-- posições atuais da bola e das peças;
+- dimensões lógicas do campo, posição da bola e posição das peças;
 - vencedor quando a partida terminar.
 
-O servidor é a fonte do estado. Uma jogada aceita alterna o turno; um gol atualiza o placar e a partida termina quando um jogador chega a três gols.
+O servidor é a fonte do estado. Uma jogada aceita alterna o turno. A interface não envia o placar nem determina se houve gol.
 
 ## Concorrência
 

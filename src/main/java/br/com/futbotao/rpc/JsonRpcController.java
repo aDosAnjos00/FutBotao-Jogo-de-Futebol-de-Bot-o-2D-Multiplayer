@@ -100,22 +100,43 @@ public class JsonRpcController {
                     textoObrigatorio(parametros, "codigoPartida"),
                     textoObrigatorio(parametros, "tokenJogador")
             );
-            default -> throw new JsonRpcException(
-                    -32601,
-                    "Método não encontrado"
+            case "partida.fazerJogada" -> partidaService.fazerJogada(
+                    textoObrigatorio(parametros, "codigoPartida"),
+                    textoObrigatorio(parametros, "tokenJogador"),
+                    textoObrigatorio(parametros, "jogada.pecaId"),
+                    numeroObrigatorio(parametros, "jogada.direcaoX"),
+                    numeroObrigatorio(parametros, "jogada.direcaoY"),
+                    numeroObrigatorio(parametros, "jogada.forca")
             );
+            default -> throw new JsonRpcException(-32601, "Método não encontrado");
         };
     }
 
     private String textoObrigatorio(Map<String, Object> parametros, String nome) {
-        Object valor = parametros.get(nome);
+        Object valor = obterValor(parametros, nome);
         if (!(valor instanceof String texto) || texto.isBlank()) {
-            throw new JsonRpcException(
-                    -32602,
-                    "Parâmetro inválido: " + nome
-            );
+            throw new JsonRpcException(-32602, "Parâmetro inválido: " + nome);
         }
         return texto;
+    }
+
+    private double numeroObrigatorio(Map<String, Object> parametros, String nome) {
+        Object valor = obterValor(parametros, nome);
+        if (!(valor instanceof Number numero)) {
+            throw new JsonRpcException(-32602, "Parâmetro inválido: " + nome);
+        }
+        return numero.doubleValue();
+    }
+
+    private Object obterValor(Map<String, Object> parametros, String nome) {
+        if (nome.startsWith("jogada.")) {
+            Object jogada = parametros.get("jogada");
+            if (jogada instanceof Map<?, ?> mapa) {
+                return mapa.get(nome.substring("jogada.".length()));
+            }
+            return null;
+        }
+        return parametros.get(nome);
     }
 
     private Map<String, Object> respostaSucesso(Object resultado, Object id) {
