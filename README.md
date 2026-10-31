@@ -109,4 +109,4 @@ docs/
   guia-do-codigo.md
 ```
 
-Para uma leitura guiada do código e o roteiro de fala, consulte [`docs/guia-do-codigo.md`](docs/guia-do-codigo.md). A apresentação editável está em [`docs/apresentacao-futbotao.pptx`](docs/apresentacao-futbotao.pptx); as notas dos slides também contêm o texto do apresentador.
+Para uma leitura guiada do código e o roteiro de fala, consulte [`docs/guia-do-codigo.md`](docs/guia-do-codigo.md).
